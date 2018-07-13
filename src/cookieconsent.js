@@ -1081,50 +1081,19 @@
 
       // the order that services will be attempted in
       services: [
-        'freegeoip',
-        'ipinfo',
-        'maxmind'
-
-        /*
-
-        // 'ipinfodb' requires some options, so we define it using an object
-        // this object will be passed to the function that defines the service
-
-        {
-          name: 'ipinfodb',
-          interpolateUrl: {
-            // obviously, this is a fake key
-            api_key: 'vOgI3748dnIytIrsJcxS7qsDf6kbJkE9lN4yEDrXAqXcKUNvjjZPox3ekXqmMMld'
-          },
-        },
-
-        // as well as defining an object, you can define a function that returns an object
-
-        function () {
-          return {name: 'ipinfodb'};
-        },
-
-        */
+        'monuip'
       ],
 
       serviceDefinitions: {
-        freegeoip: function() {
+        monuip: function() {
           return {
             // This service responds with JSON, but they do not have CORS set, so we must use JSONP and provide a callback
             // The `{callback}` is automatically rewritten by the tool
-            url: '//freegeoip.net/json/?callback={callback}',
-            isScript: true, // this is JSONP, therefore we must set it to run as a script
+            url: '//ip.monu.delivery',
             callback: function(done, response) {
-              try {
-                var json = JSON.parse(response);
-                return json.error
-                  ? toError(json)
-                  : {
-                      code: json.country_code
-                    };
-              } catch (err) {
-                return toError({error: 'Invalid response (' + err + ')'});
-              }
+		return {
+                  code: 'UK'
+               };
             }
           };
         },
