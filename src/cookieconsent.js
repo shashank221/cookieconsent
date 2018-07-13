@@ -1091,92 +1091,43 @@
             // The `{callback}` is automatically rewritten by the tool
             url: '//ip.monu.delivery',
             callback: function(done, response) {
-		return {
-                  code: 'UK'
-               };
-            }
-          };
-        },
-
-        ipinfo: function() {
-          return {
-            // This service responds with JSON, so we simply need to parse it and return the country code
-            url: '//ipinfo.io',
-            headers: ['Accept: application/json'],
-            callback: function(done, response) {
-              try {
-                var json = JSON.parse(response);
-                return json.error
-                  ? toError(json)
-                  : {
-                      code: json.country
-                    };
-              } catch (err) {
-                return toError({error: 'Invalid response (' + err + ')'});
-              }
-            }
-          };
-        },
-
-        // This service requires an option to define `key`. Options are proived using objects or functions
-        ipinfodb: function(options) {
-          return {
-            // This service responds with JSON, so we simply need to parse it and return the country code
-            url:
-              '//api.ipinfodb.com/v3/ip-country/?key={api_key}&format=json&callback={callback}',
-            isScript: true, // this is JSONP, therefore we must set it to run as a script
-            callback: function(done, response) {
-              try {
-                var json = JSON.parse(response);
-                return json.statusCode == 'ERROR'
-                  ? toError({error: json.statusMessage})
-                  : {
-                      code: json.countryCode
-                    };
-              } catch (err) {
-                return toError({error: 'Invalid response (' + err + ')'});
-              }
-            }
-          };
-        },
-
-        maxmind: function() {
-          return {
-            // This service responds with a JavaScript file which defines additional functionality. Once loaded, we must
-            // make an additional AJAX call. Therefore we provide a `done` callback that can be called asynchronously
-            url: '//js.maxmind.com/js/apis/geoip2/v2.1/geoip2.js',
-            isScript: true, // this service responds with a JavaScript file, so it must be run as a script
-            callback: function(done) {
-              // if everything went okay then `geoip2` WILL be defined
-              if (!window.geoip2) {
-                done(
-                  new Error(
-                    'Unexpected response format. The downloaded script should have exported `geoip2` to the global scope'
-                  )
-                );
-                return;
-              }
-
-              geoip2.country(
-                function(location) {
-                  try {
-                    done({
-                      code: location.country.iso_code
-                    });
-                  } catch (err) {
-                    done(toError(err));
-                  }
-                },
-                function(err) {
-                  done(toError(err));
-                }
-              );
-
-              // We can't return anything, because we need to wait for the second AJAX call to return.
-              // Then we can 'complete' the service by passing data or an error to the `done` callback.
-            }
-          };
-        }
+		function toMonuError(obj) {                                                                                                       
+    			return new Error('Error [' + (obj.code || 'UNKNOWN') + ']: ' + obj.error);                                                                     
+  		}                                                                                                                                 
+                                                                                                                                    
+  		function filter(collection, filterFn) {                                                                                           
+    			var result = [];//new Array();                                                                                                  
+    			var length = collection.length;                                                                                                 
+    			for (var j = 0; j < length; j++) {                                                                                              
+      				if (filterFn(collection[j]) === true) {                                                                                       
+        				result.push(collection[j]);                                                                                                 
+      				}                                                                                                                             
+    			}                                                                                                                               
+    			return result;                                                                                                                  
+  		} 	    
+		
+      		try {                                                                                                                         
+        		var json = JSON.parse(response);                                                                                            
+        		var eus = filter([                                                                                                          
+          			json.country.geoname_registered,                                                                                          
+          			json.country.registered_country,                                                                                          
+          			json.country.represented_country                                                                                          
+        		], function(country) {                                                                                                      
+          			return (country && country.is_in_european_union);                                                                         
+        		});                                                                                                                         
+                                                                                                                                    
+        		return (eus.length > 0) ? {                                                                                                 
+          			code: eus[0].iso_2_code                                                                                                   
+        		} : {                                                                                                                       
+          			code: json.country.geoname_registered.iso_2_code                                                                          
+        		};                                                                                                                          
+ 		} catch (err) {                                                                                                               
+        		return toMonuError({                                                                                                        
+          			error: 'Invalid response (' + err + ')'});                                                                                
+      			}   		    
+            	}
+	  };
+	}
       }
     };
 
